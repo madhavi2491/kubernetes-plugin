@@ -110,16 +110,17 @@ public class KubernetesLauncher extends JNLPLauncher {
                     .stream().filter(s -> StringUtils.isNotBlank(s)).findFirst().orElse(null);
             slave.setNamespace(namespace);
 
-            LOGGER.log(Level.FINE, "Creating Pod: {0} in namespace {1}", new Object[]{podId, namespace});
+            LOGGER.log(Level.FINE, "Creating Pod: {0}/{1}", new Object[] { namespace, podId });
             pod = client.pods().inNamespace(namespace).create(pod);
-            LOGGER.log(INFO, "Created Pod: {0} in namespace {1}", new Object[]{podId, namespace});
-            listener.getLogger().printf("Created Pod: %s in namespace %s%n", podId, namespace);
+            LOGGER.log(INFO, "Created Pod: {0}/{1}", new Object[] { namespace, podId });
+            listener.getLogger().printf("Created Pod: %s/%s%n", namespace, podId);
             String podName = pod.getMetadata().getName();
             String namespace1 = pod.getMetadata().getNamespace();
             watcher = new AllContainersRunningPodWatcher(client, pod);
-            try (Watch _ = client.pods().inNamespace(namespace1).withName(podName).watch(watcher)){
+            try (Watch _w = client.pods().inNamespace(namespace1).withName(podName).watch(watcher)) {
                 watcher.await(template.getSlaveConnectTimeout(), TimeUnit.SECONDS);
             }
+            LOGGER.log(INFO, "Pod is running: {0}/{1}", new Object[] { namespace, podId });
 
             computer.setAcceptingTasks(true);
             launched = true;
